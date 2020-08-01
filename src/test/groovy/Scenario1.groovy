@@ -9,7 +9,7 @@ class Scenario1 extends Specification {
 
     def client = new RESTClient('http://credit-test.herokuapp.com/')
 
-    def 'user can create a new line of credit and make one payment'() {
+    def 'user can create a new line of credit, make one payment, and retrieve info after 30 days'() {
         when:
         def response = client.post(path: 'api/v1/credit',
                 contentType: JSON,
