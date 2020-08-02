@@ -9,50 +9,125 @@ class Scenario1 extends Specification {
 
     def client = new RESTClient('http://credit-test.herokuapp.com/')
 
-    def 'user can create a new line of credit, make one payment, and retrieve info after 30 days'() {
+    def 'user can create a new line of credit, make one withdrawal, and retrieve info after 30 days'() {
+        //user creates brand new line of credit
         when:
-        def response = client.post(path: 'api/v1/credit',
+        def response = client.post(path : 'api/v1/credit',
                 contentType: JSON,
                 body: [accountNumber          : '1234',
                        apr         : 35,
-                       creditLimit: 1000,
-                       debit: 0,
-                       accountCreationDate : '08/01/2020',
-                       lastModifcationDate : '08/01/2020',
-                       interestAccrued : 0])
+                       remainingCreditLimit: 1000,
+                       balance: 0,
+                       accountCreationDate : '08/01/2020', //might not need this
+                       lastModifcationDate : '08/01/2020', //might not need this
+                       interestAccrued : 0,
+                       totalAmountDue: 0])
         then:
-        assert response.status == 201 : 'the new credit was not created'
+        assert response.status == 201 : 'The new credit was not created. Please try again'
 
-        //retrieve the interest accrued so far, total debt, and creditLimit on their line of credit
+        //retrieve the interest accrued so far, total debt, and remainingCreditLimit on their line of credit
         and:
         response = client.get(path: 'api/v1/credit/1234')
 
         then:
         assert response.status == 200 : 'could not retrieve current account information'
+        assert response['apr'] == 35 : 'The expected APR is incorrect'
+        assert response['remainingCreditLimit'] == 1000 : 'The expected credit limit is incorrect'
+        assert response['balance'] == 0 : 'The expected balance is incorrect'
 
-        //withdraw a valid amount from their credit
-        //in this case it is $500 on the first day
+        //withdraw a valid amount from their credit - $500 on day 1
         and:
         response = client.put(path: 'api/v1/credit/1234',
                 contentType: JSON,
                 body: [accountNumber      : '1234',
                        apr                : 35,
-                       creditLimit        : 1000,
-                       debt               : 500,
+                       remainingCreditLimit        : 500,
+                       balance            : 500,
                        accountCreationDate: '08/01/2020',
                        lastModifcationDate : '08/01/2020',
-                       interestAccrued: 0])
+                       interestAccrued: 0,
+                       totalAmountDue: 500])
         then:
         assert response.status == 201 : 'update was unsuccessful and new resource was not created'
 
         //on the 30th the account holder retrieves their account information
-        //interest accrued is $14.38
-        //debt is $514.38
         and:
         response = client.get(path: 'api/v1/credit/1234')
 
         then:
         assert response.status == 200 : 'could not retrieve current account information'
+        assert response['apr'] == 35 : 'The expected APR is incorrect'
+        assert response['remainingCreditLimit'] == 500 : 'The expected credit limit is incorrect'
+        assert response['balance'] == 500 : 'The expected balance is incorrect'
+        assert response['interestAccrued'] == 14.38 : 'The expected balance is incorrect'
+        assert response['totalAmountDue'] == 514.38 : 'The expected balance is incorrect'
+
+        //cleanup to delete everything
+    }
+
+    def 'user can create a new line of credit, make one payment, make one withdrawal, and retrieve info after 30 days'() {
+        //user creates brand new line of credit
+        when:
+        def response = client.post(path: 'api/v1/credit',
+                contentType: JSON,
+                body: [accountNumber          : '1234',
+                       apr         : 35,
+                       remainingCreditLimit: 1000,
+                       balance: 0,
+                       accountCreationDate : '08/01/2020',
+                       lastModifcationDate : '08/01/2020',
+                       interestAccrued : 0,
+                       totalAmountDue : 0])
+        then:
+        assert response.status == 201 : 'the new credit was not created'
+
+        //withdraw a valid amount from their credit - $500 on day 1
+        and:
+        response = client.put(path: 'api/v1/credit/1234',
+                contentType: JSON,
+                body: [accountNumber      : '1234',
+                       apr                : 35,
+                       remainingCreditLimit        : 500,
+                       balance            : 500,
+                       accountCreationDate: '08/01/2020',
+                       lastModifcationDate : '08/01/2020',
+                       interestAccrued: 0,
+                       totalAmountDue: 500])
+        then:
+        assert response.status == 201 : 'update was unsuccessful and new resource was not created'
+
+
+
+        //user pays back $200 on the 15th of the month
+        and:
+        response = client.put(path: 'api/v1/credit/1234',
+                contentType: JSON,
+                body: [accountNumber      : '1234',
+                       apr                : 35,
+                       remainingCreditLimit        : 700,
+                       balance            : 300,
+                       accountCreationDate: '08/01/2020',
+                       lastModifcationDate : '08/15/2020',
+                       interestAccrued: 7.19,
+                       totalAmountDue: 500]) //calculate this up to the 15th of the month
+        then:
+        assert response.status == 201 : 'update was unsuccessful and new resource was not created'
+
+        //user withdraws $100 on the 25th of the month
+        and:
+        response = client.put(path: 'api/v1/credit/1234',
+                contentType: JSON,
+                body: [accountNumber      : '1234',
+                       apr                : 35,
+                       remainingCreditLimit        : 600,
+                       balance            : 400,
+                       accountCreationDate: '08/01/2020',
+                       lastModifcationDate : '08/25/2020',
+                       interestAccrued: 0,
+                       totalAmountDue: 500]) //calculate this now up to the 25th of the month
+        then:
+        assert response.status == 201 : 'update was unsuccessful and new resource was not created'
+
     }
     // get should return interest accrued so far and total debt
 
