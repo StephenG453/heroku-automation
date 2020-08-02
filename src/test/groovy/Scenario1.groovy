@@ -34,6 +34,8 @@ class Scenario1 extends Specification {
         assert response['apr'] == 35 : 'The expected APR is incorrect'
         assert response['remainingCreditLimit'] == 1000 : 'The expected credit limit is incorrect'
         assert response['balance'] == 0 : 'The expected balance is incorrect'
+        assert response['interestAccrued'] == 0 : 'The expected interest accrued is incorrect'
+        assert response['totalAmountDue'] == 0 : 'The expected total amount due is incorrect'
 
         //withdraw a valid amount from their credit - $500 on day 1
         and:
@@ -59,8 +61,8 @@ class Scenario1 extends Specification {
         assert response['apr'] == 35 : 'The expected APR is incorrect'
         assert response['remainingCreditLimit'] == 500 : 'The expected credit limit is incorrect'
         assert response['balance'] == 500 : 'The expected balance is incorrect'
-        assert response['interestAccrued'] == 14.38 : 'The expected balance is incorrect'
-        assert response['totalAmountDue'] == 514.38 : 'The expected balance is incorrect'
+        assert response['interestAccrued'] == 14.38 : 'The expected interest accrued is incorrect'
+        assert response['totalAmountDue'] == 514.38 : 'The expected total amount due is incorrect'
 
         //cleanup to delete everything
     }
@@ -79,7 +81,19 @@ class Scenario1 extends Specification {
                        interestAccrued : 0,
                        totalAmountDue : 0])
         then:
-        assert response.status == 201 : 'the new credit was not created'
+        assert response.status == 201 : 'the new credit line was not created'
+
+        //retrieve the interest accrued so far, total debt, and remainingCreditLimit on their line of credit
+        and:
+        response = client.get(path: 'api/v1/credit/1234')
+
+        then:
+        assert response.status == 200 : 'could not retrieve current account information'
+        assert response['apr'] == 35 : 'The expected APR is incorrect'
+        assert response['remainingCreditLimit'] == 1000 : 'The expected credit limit is incorrect'
+        assert response['balance'] == 0 : 'The expected balance is incorrect'
+        assert response['interestAccrued'] == 0 : 'The expected interest accrued is incorrect'
+        assert response['totalAmountDue'] == 0 : 'The expected total amount due is incorrect'
 
         //withdraw a valid amount from their credit - $500 on day 1
         and:
@@ -96,7 +110,17 @@ class Scenario1 extends Specification {
         then:
         assert response.status == 201 : 'update was unsuccessful and new resource was not created'
 
+        //retrieve the interest accrued so far, total debt, and remainingCreditLimit on their line of credit
+        and:
+        response = client.get(path: 'api/v1/credit/1234')
 
+        then:
+        assert response.status == 200 : 'could not retrieve current account information'
+        assert response['apr'] == 35 : 'The expected APR is incorrect'
+        assert response['remainingCreditLimit'] == 500 : 'The expected credit limit is incorrect'
+        assert response['balance'] == 500 : 'The expected balance is incorrect'
+        assert response['interestAccrued'] == 0 : 'The expected interest accrued is incorrect'
+        assert response['totalAmountDue'] == 500 : 'The expected total amount due is incorrect'
 
         //user pays back $200 on the 15th of the month
         and:
@@ -113,6 +137,19 @@ class Scenario1 extends Specification {
         then:
         assert response.status == 201 : 'update was unsuccessful and new resource was not created'
 
+        //retrieve the interest accrued so far, total debt, and remainingCreditLimit on their line of credit
+        and:
+        response = client.get(path: 'api/v1/credit/1234')
+
+        //since we are still inside the 30 day window, we do not add interest to total amount due
+        then:
+        assert response.status == 200 : 'could not retrieve current account information'
+        assert response['apr'] == 35 : 'The expected APR is incorrect'
+        assert response['remainingCreditLimit'] == 700 : 'The expected credit limit is incorrect'
+        assert response['balance'] == 300 : 'The expected balance is incorrect'
+        assert response['interestAccrued'] == 7.19 : 'The expected interest accrued is incorrect'
+        assert response['totalAmountDue'] == 300 : 'The expected total amount due is incorrect'
+
         //user withdraws $100 on the 25th of the month
         and:
         response = client.put(path: 'api/v1/credit/1234',
@@ -123,13 +160,40 @@ class Scenario1 extends Specification {
                        balance            : 400,
                        accountCreationDate: '08/01/2020',
                        lastModifcationDate : '08/25/2020',
-                       interestAccrued: 0,
-                       totalAmountDue: 500]) //calculate this now up to the 25th of the month
+                       interestAccrued: 10.07,
+                       totalAmountDue: 400])
         then:
         assert response.status == 201 : 'update was unsuccessful and new resource was not created'
 
+        //retrieve the interest accrued so far, total debt, and remainingCreditLimit on their line of credit
+        and:
+        response = client.get(path: 'api/v1/credit/1234')
+
+        //since we are still inside the 30 day window, we do not add interest to total amount due
+        then:
+        assert response.status == 200 : 'could not retrieve current account information'
+        assert response['apr'] == 35 : 'The expected APR is incorrect'
+        assert response['remainingCreditLimit'] == 600 : 'The expected credit limit is incorrect'
+        assert response['balance'] == 400 : 'The expected balance is incorrect'
+        assert response['interestAccrued'] == 10.07 : 'The expected interest accrued is incorrect'
+        assert response['totalAmountDue'] == 400 : 'The expected total amount due is incorrect'
+
+        //on the 30th, retrieve the interest accrued so far, total debt, and remainingCreditLimit on their line of credit
+        and:
+        response = client.get(path: 'api/v1/credit/1234')
+
+        //30 days has arrived - now interest is added to the total amount due
+        then:
+        assert response.status == 200 : 'could not retrieve current account information'
+        assert response['apr'] == 35 : 'The expected APR is incorrect'
+        assert response['remainingCreditLimit'] == 600 : 'The expected credit limit is incorrect'
+        assert response['balance'] == 400 : 'The expected balance is incorrect'
+        assert response['interestAccrued'] == 11.99 : 'The expected interest accrued is incorrect'
+        assert response['totalAmountDue'] == 411.99 : 'The expected total amount due is incorrect'
+
+        //add cleanup
+
     }
-    // get should return interest accrued so far and total debt
 
 //TODO: edge cases
 
