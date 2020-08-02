@@ -3,7 +3,7 @@ import groovyx.net.http.*
 import spock.lang.Specification
 import static groovyx.net.http.ContentType.JSON
 
-class Scenario1 extends Specification {
+class E2EHappyPath extends Specification {
 
     //test 404 error NOT FOUND
 
