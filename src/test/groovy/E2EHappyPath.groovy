@@ -30,12 +30,8 @@ class E2EHappyPath extends Specification {
         response = client.get(path: 'api/v1/credit/1234')
 
         then:
-        assert response.status == 200 : 'could not retrieve current account information'
-        assert response['apr'] == 35 : 'The expected APR is incorrect'
-        assert response['remainingCreditLimit'] == 1000 : 'The expected credit limit is incorrect'
-        assert response['balance'] == 0 : 'The expected balance is incorrect'
-        assert response['interestAccrued'] == 0 : 'The expected interest accrued is incorrect'
-        assert response['totalAmountDue'] == 0 : 'The expected total amount due is incorrect'
+        checkForCorrectDataInResponse(response,200, 35, 1000, 0,
+                0, 0)
 
         //withdraw a valid amount from their credit - $500 on day 1
         and:
@@ -57,12 +53,8 @@ class E2EHappyPath extends Specification {
         response = client.get(path: 'api/v1/credit/1234')
 
         then:
-        assert response.status == 200 : 'could not retrieve current account information'
-        assert response['apr'] == 35 : 'The expected APR is incorrect'
-        assert response['remainingCreditLimit'] == 500 : 'The expected credit limit is incorrect'
-        assert response['balance'] == 500 : 'The expected balance is incorrect'
-        assert response['interestAccrued'] == 14.38 : 'The expected interest accrued is incorrect'
-        assert response['totalAmountDue'] == 514.38 : 'The expected total amount due is incorrect'
+        checkForCorrectDataInResponse(response,200, 35, 500, 500,
+                14.38, 514.38)
 
         //cleanup to delete everything
     }
@@ -88,12 +80,8 @@ class E2EHappyPath extends Specification {
         response = client.get(path: 'api/v1/credit/1234')
 
         then:
-        assert response.status == 200 : 'could not retrieve current account information'
-        assert response['apr'] == 35 : 'The expected APR is incorrect'
-        assert response['remainingCreditLimit'] == 1000 : 'The expected credit limit is incorrect'
-        assert response['balance'] == 0 : 'The expected balance is incorrect'
-        assert response['interestAccrued'] == 0 : 'The expected interest accrued is incorrect'
-        assert response['totalAmountDue'] == 0 : 'The expected total amount due is incorrect'
+        checkForCorrectDataInResponse(response,200, 35, 1000, 0,
+                0, 0)
 
         //withdraw a valid amount from their credit - $500 on day 1
         and:
@@ -115,12 +103,8 @@ class E2EHappyPath extends Specification {
         response = client.get(path: 'api/v1/credit/1234')
 
         then:
-        assert response.status == 200 : 'could not retrieve current account information'
-        assert response['apr'] == 35 : 'The expected APR is incorrect'
-        assert response['remainingCreditLimit'] == 500 : 'The expected credit limit is incorrect'
-        assert response['balance'] == 500 : 'The expected balance is incorrect'
-        assert response['interestAccrued'] == 0 : 'The expected interest accrued is incorrect'
-        assert response['totalAmountDue'] == 500 : 'The expected total amount due is incorrect'
+        checkForCorrectDataInResponse(response,200, 35, 500, 500,
+                0, 500)
 
         //user pays back $200 on the 15th of the month
         and:
@@ -143,12 +127,8 @@ class E2EHappyPath extends Specification {
 
         //since we are still inside the 30 day window, we do not add interest to total amount due
         then:
-        assert response.status == 200 : 'could not retrieve current account information'
-        assert response['apr'] == 35 : 'The expected APR is incorrect'
-        assert response['remainingCreditLimit'] == 700 : 'The expected credit limit is incorrect'
-        assert response['balance'] == 300 : 'The expected balance is incorrect'
-        assert response['interestAccrued'] == 7.19 : 'The expected interest accrued is incorrect'
-        assert response['totalAmountDue'] == 300 : 'The expected total amount due is incorrect'
+        checkForCorrectDataInResponse(response, 200, 35, 700, 300,
+                7.19, 300)
 
         //user withdraws $100 on the 25th of the month
         and:
@@ -171,12 +151,8 @@ class E2EHappyPath extends Specification {
 
         //since we are still inside the 30 day window, we do not add interest to total amount due
         then:
-        assert response.status == 200 : 'could not retrieve current account information'
-        assert response['apr'] == 35 : 'The expected APR is incorrect'
-        assert response['remainingCreditLimit'] == 600 : 'The expected credit limit is incorrect'
-        assert response['balance'] == 400 : 'The expected balance is incorrect'
-        assert response['interestAccrued'] == 10.07 : 'The expected interest accrued is incorrect'
-        assert response['totalAmountDue'] == 400 : 'The expected total amount due is incorrect'
+        checkForCorrectDataInResponse(response, 200, 35, 600, 400,
+                10.07, 400)
 
         //on the 30th, retrieve the interest accrued so far, total debt, and remainingCreditLimit on their line of credit
         and:
@@ -184,32 +160,20 @@ class E2EHappyPath extends Specification {
 
         //30 days has arrived - now interest is added to the total amount due
         then:
-        assert response.status == 200 : 'could not retrieve current account information'
-        assert response['apr'] == 35 : 'The expected APR is incorrect'
-        assert response['remainingCreditLimit'] == 600 : 'The expected credit limit is incorrect'
-        assert response['balance'] == 400 : 'The expected balance is incorrect'
-        assert response['interestAccrued'] == 11.99 : 'The expected interest accrued is incorrect'
-        assert response['totalAmountDue'] == 411.99 : 'The expected total amount due is incorrect'
+        checkForCorrectDataInResponse(response, 200, 35, 600, 400,
+                11.99, 411.99)
 
         //add cleanup
 
     }
 
-//TODO: edge cases
-
-// add a new line of credit with same id - should return 500 Internal Server Error stating that ID already exists
-
-// add a new line of credit outside the max credit amount allowed - should return 500 error stating the credit amount
-//exceeds the limit
-
-// consolidate ^^
-// add a new line of credit with APR outside the max allowed - should return 500 error stating the APR exceeds the limit
-
-//add a new line of credit with creditAmount as a negative value - return 500 error stating creditAmount should be a
-// positive whole number
-
-// ^^ consolidate
-//add a new line of credit with APR as a negative value - return 500 error stating APR should be a positive whole number
-
-    // try to withdraw an amount greater than the current creditAmount - return 500 error stating withdrawal amount is too big
+    void checkForCorrectDataInResponse(response, responseStatus, apr, remainingCreditLimit,
+                                       balance, interestAccrued, totalAmountDue) {
+        assert response.status == responseStatus : 'could not retrieve current account information'
+        assert response['apr'] == apr : 'The expected APR is incorrect'
+        assert response['remainingCreditLimit'] == remainingCreditLimit : 'The expected credit limit is incorrect'
+        assert response['balance'] == balance : 'The expected balance is incorrect'
+        assert response['interestAccrued'] == interestAccrued : 'The expected interest accrued is incorrect'
+        assert response['totalAmountDue'] == totalAmountDue : 'The expected total amount due is incorrect'
+    }
 }
