@@ -1,18 +1,18 @@
-package HappyPath;
+package HappyPath
 
-import ClientData.FirstClientData;
-import groovyx.net.http.RESTClient;
-import spock.lang.Shared;
-import spock.lang.Specification;
+import ClientData.FirstClientData
+import groovyx.net.http.RESTClient
+import spock.lang.Shared
+import spock.lang.Specification
 
-import static groovyx.net.http.ContentType.JSON;
+import static groovyx.net.http.ContentType.JSON
 
 class CreateAndWithdrawalTest extends Specification {
 
-    FirstClientData firstClientData
+    @Shared FirstClientData firstClientData
     @Shared def client
 
-    def setup() {
+    def setupSpec() {
         client = new RESTClient('http://credit-test.herokuapp.com/')
         firstClientData = new FirstClientData()
     }
