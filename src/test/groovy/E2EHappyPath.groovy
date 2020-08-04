@@ -5,10 +5,7 @@ import static groovyx.net.http.ContentType.JSON
 
 class E2EHappyPath extends Specification {
 
-    //test 404 error NOT FOUND
-
     FirstClientData firstClientData
-
     def client
 
     def setUp() {
