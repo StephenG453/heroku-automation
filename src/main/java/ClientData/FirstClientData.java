@@ -1,3 +1,5 @@
+package ClientData;
+
 public class FirstClientData { // to really scale this class can extends an Abstract class or Interface
 
     private final String accountNumber = "1234";

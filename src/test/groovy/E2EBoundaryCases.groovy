@@ -5,12 +5,12 @@
 //
 //class E2EBoundaryCases extends Specification {
 //
-//    FirstClientData firstClientData
+//    ClientData.FirstClientData firstClientData
 //    def client
 //
 //    def setup() {
 //        client = new RESTClient('http://credit-test.herokuapp.com/')
-//        firstClientData = new FirstClientData()
+//        firstClientData = new ClientData.FirstClientData()
 //    }
 //
 //   def 'user should not be able to create a duplicate line of credit with the same ID'() {
