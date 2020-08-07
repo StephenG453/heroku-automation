@@ -1,4 +1,4 @@
-import ClientData.FirstClientData
+import TestData.FirstClientData
 import groovyx.net.http.RESTClient
 import spock.lang.Shared
 import spock.lang.Specification
