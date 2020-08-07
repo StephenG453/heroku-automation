@@ -72,34 +72,31 @@ class E2EBoundaryCases extends Specification {
         assert response.status == 500 : 'The new account outside the APR limit was invalidly created.'
     }
 
-    def 'user should not be able to create a line of credit with a negative credit limit value'() {
-        when:
-        def response = client.post(path : 'api/v1/credit',
-                contentType: JSON,
-                body: [accountNumber        : firstClientData.getAccountNumber(),
-                       apr                  : firstClientData.getAPR(),
-                       remainingCreditLimit : -1,
-                       balance              : 0,
-                       lastModifcationDate  : '08/01/2020',
-                       interestAccrued      : 0,
-                       totalAmountDue       : 0])
-        then:
-        assert response.status == 500 : 'The new account with a negative credit limit was invalidly created.'
+    def 'user should not be able create a new line with a negative APR or credit limit value'(int apr, int creditLimit) {
+        expect:
+        assert sendPostRequestForNegativeNumbersTest(apr, creditLimit).status == 500 : 'The new account was invalidly ' +
+                'created with a negative value'
+
+        where:
+        apr                      | creditLimit
+        firstClientData.getAPR() | -1
+        -35                      | firstClientData.getRemainingCreditLimit()
+        -35                      | -10
+
+
     }
 
-    def 'user should not be able to create a line of credit with a negative APR value'() {
-        when:
+    def sendPostRequestForNegativeNumbersTest(int apr, int creditLimit) {
         def response = client.post(path : 'api/v1/credit',
                 contentType: JSON,
                 body: [accountNumber        : firstClientData.getAccountNumber(),
-                       apr                  : -35,
-                       remainingCreditLimit : 1000,
+                       apr                  : apr,
+                       remainingCreditLimit : creditLimit,
                        balance              : 0,
                        lastModifcationDate  : '08/01/2020',
                        interestAccrued      : 0,
                        totalAmountDue       : 0])
-        then:
-        assert response.status == 500 : 'The new account with a negative APR was invalidly created.'
+        return response
     }
 
     def 'user should not be able to withdraw an amount greater than the current credit limit'() {
