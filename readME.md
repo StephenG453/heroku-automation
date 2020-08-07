@@ -3,7 +3,7 @@ This is a quick project developed for backend automation of heroku that also con
 
 ## Improvements
 1. Integrate Jenkins plugins (like Test Results Analyzer) for a simple reporting layout within your CI/CD pipeline
-2. Massive automation coverage can be achieved by using Data-Driven-Development. That is easy to implement here 
+2. Massive automation coverage can be achieved by using Data-Driven-Testing. That is easy to implement here 
 
 ### Project Setup in IntelliJ:
 1. Use IntelliJ 2018.X
